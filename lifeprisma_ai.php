@@ -1369,7 +1369,6 @@ class lifeprisma_ai extends rcube_plugin
         // Cache detect_followup results in Redis (24h)
         if ($action === 'detect_followup' && !empty($msg_uid) && !empty($mbox)) {
             $cache_key = "fu:{$mbox}:{$msg_uid}";
-            $response['cached'] = true;
             $this->cache_set($cache_key, $response, 86400);
         }
 
