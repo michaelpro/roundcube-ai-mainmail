@@ -1880,14 +1880,8 @@ function lpai_submit() {
                             if (previewText) previewText.innerHTML = lpai_md_to_html(fullText);
                             previewText.scrollTop = previewText.scrollHeight;
                         } else if (event.type === 'done') {
-                            var label = 'Preview';
-                            if (event.model) label += ' \u00B7 ' + event.model;
-                            if (event.tokens) {
-                                label += ' \u00B7 ' + event.tokens.input + ' in / ' + event.tokens.output + ' out';
-                                var cost = lpai_estimate_cost(event.model || lpai_options.model, event.tokens.input, event.tokens.output);
-                                if (cost) label += ' \u00B7 ' + cost;
-                            }
-                            if (event.cached) label += ' \u00B7 Cached';
+                            var label = 'Preview \u00B7 ' + lpai_format_usage_label(event.model || lpai_options.model, event.tokens);
+                            if (event.cached) label += ' \u00B7 Cached (Server)';
                             if (previewLabel) previewLabel.textContent = label;
                         } else if (event.type === 'error') {
                             if (previewText) previewText.textContent = 'Error: ' + (event.message || 'Unknown error');
@@ -1948,12 +1942,7 @@ function lpai_submit_fallback(postData) {
                 lpai_last_result = data.result;
                 if (previewText) previewText.innerHTML = lpai_md_to_html(data.result);
 
-                var label = 'Preview';
-                if (data.tokens) {
-                    label += ' \u00B7 ' + data.tokens.input + ' in / ' + data.tokens.output + ' out';
-                    var cost = lpai_estimate_cost(lpai_options.model, data.tokens.input, data.tokens.output);
-                    if (cost) label += ' \u00B7 ' + cost;
-                }
+                var label = 'Preview \u00B7 ' + lpai_format_usage_label(data.model || lpai_options.model, data.tokens);
                 if (previewLabel) previewLabel.textContent = label;
                 if (preview) preview.style.display = 'block';
 
@@ -3069,7 +3058,7 @@ function lpai_init_followup_detection() {
         var cached = sessionStorage.getItem(cacheKey);
         if (cached) {
             var c = JSON.parse(cached);
-            lpai_show_email_analysis(c.info, c.model, c.tokens, true);
+            lpai_show_email_analysis(c.info, c.model, c.tokens, 'Browser');
             return;
         }
     } catch (e) {}
@@ -3125,7 +3114,7 @@ function lpai_init_followup_detection() {
                 var info = JSON.parse(data.result.replace(/```json\n?|\n?```/g, '').trim());
                 // Cache the result
                 try { sessionStorage.setItem(cacheKey, JSON.stringify({ info: info, model: data.model, tokens: data.tokens })); } catch (e) {}
-                lpai_show_email_analysis(info, data.model, data.tokens);
+                lpai_show_email_analysis(info, data.model, data.tokens, data.cached ? 'Server' : false);
             } catch (e) {}
         } else {
             // Cache negative result
@@ -3212,7 +3201,7 @@ function lpai_show_alert_banner(info, model, tokens, fromCache) {
     html += '<button type="button" class="lpai-followup-dismiss" onclick="this.parentNode.parentNode.remove()">Dismiss</button>';
     html += '</div>';
     var usageLabel = lpai_format_usage_label(model, tokens);
-    if (fromCache) usageLabel = (usageLabel ? usageLabel + ' · ' : '') + 'Cached';
+    if (fromCache) usageLabel = (usageLabel ? usageLabel + ' · ' : '') + 'Cached (' + fromCache + ')';
     if (usageLabel) {
         html += '<div class="lpai-usage-footer">' + usageLabel + '</div>';
     }
@@ -3249,7 +3238,7 @@ function lpai_show_followup_banner(info, model, tokens, fromCache) {
     html += '<button type="button" class="lpai-followup-dismiss" onclick="this.parentNode.parentNode.remove()">Dismiss</button>';
     html += '</div>';
     var usageLabel = lpai_format_usage_label(model || lpai_options.model, tokens);
-    if (fromCache) usageLabel = (usageLabel ? usageLabel + ' · ' : '') + 'Cached';
+    if (fromCache) usageLabel = (usageLabel ? usageLabel + ' · ' : '') + 'Cached (' + fromCache + ')';
     if (usageLabel) {
         html += '<div class="lpai-usage-footer">' + usageLabel + '</div>';
     }
