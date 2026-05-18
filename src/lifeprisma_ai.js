@@ -1705,65 +1705,51 @@ function lpai_get_content_tail_plain() {
 function lpai_get_content_tail_html() {
     var editor = tinyMCE.activeEditor;
     var body = editor.getBody();
-    var text = editor.getContent({ format: 'text' });
-    if (!text) return '';
+    if (!body) return '';
 
-    var lines = text.split('\n');
-    var tailStart = lines.length;
+    var html = editor.getContent();
+    if (!html) return '';
 
-    for (var i = 0; i < lines.length; i++) {
-        var line = lines[i];
-        if (line.match(/^\s*--\s*$/) || line.match(/^>/) || line.match(/^On\s+.+wrote:/)) {
-            tailStart = i;
-            break;
+    // Method 1: Roundcube signature container <div id="_rc_sig">
+    var sigDiv = body.querySelector('#_rc_sig');
+    if (sigDiv) {
+        var sigIdx = html.indexOf(sigDiv.outerHTML);
+        if (sigIdx >= 0) return html.substring(sigIdx);
+    }
+
+    // Method 2: Roundcube reply-intro <p id="reply-intro">
+    var replyIntro = body.querySelector('#reply-intro');
+    if (replyIntro) {
+        var introIdx = html.indexOf(replyIntro.outerHTML);
+        if (introIdx >= 0) return html.substring(introIdx);
+    }
+
+    // Method 3: Blockquote (quoted reply thread)
+    var bq = body.querySelector('blockquote');
+    if (bq) {
+        // Check for "On ... wrote:" element just before the blockquote
+        var prev = bq.previousElementSibling;
+        while (prev) {
+            var pt = prev.textContent || '';
+            if (/On\s+.+wrote:/.test(pt)) {
+                var pIdx = html.indexOf(prev.outerHTML);
+                if (pIdx >= 0) return html.substring(pIdx);
+                break;
+            }
+            prev = prev.previousElementSibling;
         }
+        // Fallback: use blockquote itself
+        var bqIdx = html.indexOf(bq.outerHTML);
+        if (bqIdx >= 0) return html.substring(bqIdx);
     }
 
-    if (tailStart >= lines.length) return '';
-
-    var searchText = '';
-    for (var j = tailStart; j < lines.length; j++) {
-        var t = lines[j].trim();
-        if (t.length > 0) {
-            searchText = t.substring(0, Math.min(t.length, 50));
-            break;
-        }
+    // Method 4: Text-based fallback for signature separator "--"
+    var sigMatch = html.match(/<br[^>]*>\s*--\s*<br/i);
+    if (sigMatch) {
+        return html.substring(html.indexOf(sigMatch[0]));
     }
 
-    if (!searchText) return '';
-
-    var walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null, false);
-    var nodes = [];
-    var node;
-    while (node = walker.nextNode()) {
-        nodes.push(node);
-    }
-
-    var foundNode = null;
-    var foundOffset = 0;
-    for (var k = nodes.length - 1; k >= 0; k--) {
-        var nodeText = nodes[k].textContent;
-        var idx = nodeText.lastIndexOf(searchText);
-        if (idx >= 0) {
-            foundNode = nodes[k];
-            foundOffset = idx;
-            break;
-        }
-    }
-
-    if (!foundNode) return '';
-
-    try {
-        var range = document.createRange();
-        range.setStart(foundNode, foundOffset);
-        range.setEndAfter(body.lastChild);
-        var fragment = range.cloneContents();
-        var container = document.createElement('div');
-        container.appendChild(fragment);
-        return container.innerHTML;
-    } catch (e) {
-        return '';
-    }
+    return '';
 }
 
 function lpai_apply_with_preserve(text) {
@@ -1805,6 +1791,14 @@ function lpai_get_reply_text() {
     if (fullBody) return fullBody.innerText || fullBody.textContent || '';
 
     // Compose view: extract quoted text
+    // For HTML editor, extract blockquote content directly from the DOM
+    if (window.tinyMCE && tinyMCE.activeEditor) {
+        var body = tinyMCE.activeEditor.getBody();
+        var bq = body.querySelector('blockquote');
+        if (bq) return bq.innerText || bq.textContent || '';
+        // Fallback: look for "On ... wrote:" and subsequent content in plain text
+    }
+
     var content = lpai_get_editor_content();
     var lines = content.split('\n');
     var quoted = [];

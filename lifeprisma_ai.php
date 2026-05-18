@@ -1605,7 +1605,8 @@ class lifeprisma_ai extends rcube_plugin
             "6. Be natural and human-sounding, not robotic.\n" .
             "7. When composing replies, be contextually aware of the conversation.\n" .
             "8. Use markdown formatting (bold, lists, tables). For tables use markdown pipe syntax (| col | col |), never ASCII art (+---+). Always put a line break after the greeting (e.g. 'Olá,\\n\\n' not 'Olá,Texto').\n" .
-            "9. If the user gives a follow-up instruction like 'make it shorter' or 'now translate it', " .
+            "9. NEVER include email signatures, sign-offs, or signature blocks in your responses. Do NOT add lines like '--', 'Best regards', 'Sincerely', name/title/company blocks, or contact details. The email client automatically inserts the user's signature.\n" .
+            "10. If the user gives a follow-up instruction like 'make it shorter' or 'now translate it', " .
             "apply it to the previously generated text.";
     }
 
