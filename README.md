@@ -106,8 +106,8 @@ Switch between AI providers directly in the UI. Mix cloud and local:
 
 ```bash
 cd /path/to/roundcube/plugins/
-git clone https://github.com/eduardostern/roundcube-genia.git lifeprisma_ai
-cd lifeprisma_ai
+git clone https://github.com/michaelpro/roundcube-ai-mainmail.git roundcube_ai
+cd roundcube_ai
 cp config.inc.php.dist config.inc.php
 ```
 
@@ -118,7 +118,7 @@ Enable the plugin in Roundcube's `config/config.inc.php`:
 ```php
 $config['plugins'] = [
     // ... your other plugins
-    'lifeprisma_ai',
+    'roundcube_ai',
 ];
 ```
 
@@ -132,7 +132,7 @@ composer require lifeprisma/roundcube-genia
 ### Option 3: Manual Download
 
 1. Download the [latest release](https://github.com/eduardostern/roundcube-genia/releases)
-2. Extract to `plugins/lifeprisma_ai/`
+2. Extract to `plugins/roundcube_ai/`
 3. Copy `config.inc.php.dist` to `config.inc.php`
 4. Add your API keys and enable the plugin
 
